@@ -20,9 +20,12 @@ from contextlib import contextmanager
 from unicodedata import normalize
 from warnings import catch_warnings
 
-from flask_frozen import (Freezer, walk_directory,
-    MissingURLGeneratorWarning, MimetypeMismatchWarning, NotFoundWarning)
-from flask_frozen import test_app
+from flask_frozen import (Freezer,
+                          MissingURLGeneratorWarning,
+                          MimetypeMismatchWarning,
+                          NotFoundWarning,
+                          test_app,
+                          walk_directory)
 
 try:
     unicode
@@ -101,9 +104,9 @@ class TestFreezer(unittest.TestCase):
     expected_output = {
         u'/': b'Main index /product_5/?revision=b12ef20',
         u'/admin/': b'Admin index\n'
-            b'<a href="/page/I%20l%C3%B8v%C3%AB%20Unicode/">Unicode test</a>\n'
-            b'<a href="/page/octothorp/?query_foo=bar#introduction">'
-            b'URL parsing test</a>',
+        b'<a href="/page/I%20l%C3%B8v%C3%AB%20Unicode/">Unicode test</a>\n'
+        b'<a href="/page/octothorp/?query_foo=bar#introduction">'
+        b'URL parsing test</a>',
         u'/robots.txt': b'User-agent: *\nDisallow: /',
         u'/favicon.ico': read_file(test_app.FAVICON),
         u'/product_0/': b'Product num 0',
@@ -156,7 +159,7 @@ class TestFreezer(unittest.TestCase):
     maxDiff = None
 
     def do_extra_config(self, app, freezer):
-        pass # To be overriden
+        pass  # To be overriden
 
     @contextmanager
     def make_app(self):
@@ -301,7 +304,7 @@ class TestFreezer(unittest.TestCase):
                 freezer.freeze()
                 self.assertEqual(len(logged_warnings), 1)
                 self.assertEqual(logged_warnings[0].category,
-                                  NotFoundWarning)
+                                 NotFoundWarning)
 
     def test_warn_on_missing_generator(self):
         with self.make_app() as (temp, app, freezer):
@@ -315,7 +318,7 @@ class TestFreezer(unittest.TestCase):
                 freezer.freeze()
                 self.assertEqual(len(logged_warnings), 1)
                 self.assertEqual(logged_warnings[0].category,
-                                  MissingURLGeneratorWarning)
+                                 MissingURLGeneratorWarning)
 
     def test_wrong_default_mimetype(self):
         with self.make_app() as (temp, app, freezer):
@@ -328,7 +331,7 @@ class TestFreezer(unittest.TestCase):
                 freezer.freeze()
                 self.assertEqual(len(logged_warnings), 1)
                 self.assertEqual(logged_warnings[0].category,
-                                  MimetypeMismatchWarning)
+                                 MimetypeMismatchWarning)
 
     def test_default_mimetype(self):
         with self.make_app() as (temp, app, freezer):
@@ -347,7 +350,8 @@ class TestFreezer(unittest.TestCase):
     def test_configured_default_mimetype(self):
         with self.make_app() as (temp, app, freezer):
             app.config['FREEZER_DEFAULT_MIMETYPE'] = 'image/png'
-            @app.route(u'/no-file-extension')
+            app.route(u'/no-file-extension')
+
             def no_extension():
                 return '42', 200, {'Content-Type': 'image/png'}
             freezer.freeze()
@@ -355,7 +359,8 @@ class TestFreezer(unittest.TestCase):
     def test_wrong_configured_mimetype(self):
         with self.make_app() as (temp, app, freezer):
             app.config['FREEZER_DEFAULT_MIMETYPE'] = 'image/png'
-            @app.route(u'/no-file-extension')
+            app.route(u'/no-file-extension')
+
             def no_extension():
                 return '42', 200, {'Content-Type': 'application/octet-stream'}
             with catch_warnings(record=True) as logged_warnings:
@@ -363,7 +368,7 @@ class TestFreezer(unittest.TestCase):
                 freezer.freeze()
                 self.assertEqual(len(logged_warnings), 1)
                 self.assertEqual(logged_warnings[0].category,
-                                  MimetypeMismatchWarning)
+                                 MimetypeMismatchWarning)
 
 
 class TestInitApp(TestFreezer):
@@ -376,10 +381,10 @@ class TestBaseURL(TestFreezer):
     expected_output['/where_am_i/'] = \
         b'/myapp/where_am_i/ http://example/myapp/where_am_i/'
     expected_output['/admin/'] = (
-        b'Admin index\n'
-        b'<a href="/myapp/page/I%20l%C3%B8v%C3%AB%20Unicode/">Unicode test</a>\n'
-        b'<a href="/myapp/page/octothorp/?query_foo=bar#introduction">'
-        b'URL parsing test</a>')
+        b'''Admin index\n
+<a href="/myapp/page/I%20l%C3%B8v%C3%AB%20Unicode/">Unicode test</a>\n'
+<a href="/myapp/page/octothorp/?query_foo=bar#introduction">'
+URL parsing test</a>''')
 
     def do_extra_config(self, app, freezer):
         app.config['FREEZER_BASE_URL'] = 'http://example/myapp/'
@@ -401,7 +406,6 @@ class TestServerName(TestFreezer):
         b'/where_am_i/ http://example.net/where_am_i/')
 
 
-
 class TestWithoutUrlForLog(TestFreezer):
     freezer_kwargs = dict(log_url_for=False)
 
@@ -418,16 +422,16 @@ class TestRelativeUrlFor(TestFreezer):
 
     expected_output = TestFreezer.expected_output.copy()
     expected_output['/admin/'] = (
-        b'Admin index\n'
-        b'<a href="../page/I%20l%C3%B8v%C3%AB%20Unicode/index.html">'
-        b'Unicode test</a>\n'
-        b'<a href="../page/octothorp/index.html?query_foo=bar#introduction">'
-        b'URL parsing test</a>')
+        b'''Admin index\n
+<a href="../page/I%20l%C3%B8v%C3%AB%20Unicode/index.html">'
+Unicode test</a>\n'
+<a href="../page/octothorp/index.html?query_foo=bar#introduction">'
+URL parsing test</a>''')
 
 
 class TestStaticIgnore(TestFreezer):
     def do_extra_config(self, app, freezer):
-        app.config['FREEZER_STATIC_IGNORE'] = ['*.js',]
+        app.config['FREEZER_STATIC_IGNORE'] = ['*.js', ]
 
     expected_output = TestFreezer.expected_output.copy()
     filenames = TestFreezer.filenames.copy()

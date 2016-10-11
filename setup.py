@@ -2,8 +2,8 @@
 Frozen-Flask
 ------------
 
-Freezes a Flask application into a set of static files. The result can be hosted
-without any server-side software other than a traditional web server.
+Freezes a Flask application into a set of static files. The result can be
+hosted without any server-side software other than a traditional web server.
 
 Links
 `````

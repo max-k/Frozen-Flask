@@ -12,11 +12,6 @@
 
 """
 
-__all__ = ['Freezer', 'walk_directory', 'relative_url_for']
-
-VERSION = '0.11'
-
-
 import os.path
 import mimetypes
 import warnings
@@ -34,9 +29,14 @@ try:
 except ImportError:  # Python 3
     from urllib.parse import urlsplit, unquote
 
-from werkzeug.exceptions import HTTPException
+# from werkzeug.exceptions import HTTPException
 from flask import (Flask, Blueprint, url_for, request, send_from_directory,
                    redirect)
+
+__all__ = ['Freezer', 'walk_directory', 'relative_url_for']
+
+VERSION = '0.11'
+
 
 try:
     unicode
@@ -52,8 +52,10 @@ class MissingURLGeneratorWarning(Warning):
 class MimetypeMismatchWarning(Warning):
     pass
 
+
 class NotFoundWarning(Warning):
     pass
+
 
 class Freezer(object):
     """
@@ -209,17 +211,18 @@ class Freezer(object):
                             # Assume a tuple.
                             endpoint, values = generated
                         url = url_for(endpoint, **values)
-                        assert url.startswith(script_name), (
-                            'url_for returned an URL %r not starting with '
-                            'script_name %r. Bug in Werkzeug?'
-                            % (url, script_name)
-                        )
+                        msg = 'url_for returned an URL {0}'.format(url)
+                        msg = '{0} not starting with script_name'.format(msg)
+                        msg = '{0} {1}.'.format(msg, script_name)
+                        msg = '{0} Bug in Werkzeug?'.format(msg)
+                        assert url.startswith(script_name), (msg)
                         url = url[len(script_name):]
                     # flask.url_for "quotes" URLs, eg. a space becomes %20
                     url = unquote(url)
                     parsed_url = urlsplit(url)
                     if parsed_url.scheme or parsed_url.netloc:
-                        raise ValueError('External URLs not supported: ' + url)
+                        msg = 'External URLs not supported: {0}'.format(url)
+                        raise ValueError(msg)
 
                     # Remove any query string and fragment:
                     url = parsed_url.path
@@ -241,12 +244,11 @@ class Freezer(object):
             not_generated_endpoints -= set(self._static_rules_endpoints())
 
         if not_generated_endpoints:
-            warnings.warn(
-                'Nothing frozen for endpoints %s. Did you forget an URL '
-                'generator?' % ', '.join(
-                    unicode(e) for e in not_generated_endpoints),
-                MissingURLGeneratorWarning,
-                stacklevel=3)
+            msg1 = 'Nothing frozen for endpoints'
+            msg2 = 'Did you forget an URL generator?'
+            endpoints = ', '.join(unicode(e) for e in not_generated_endpoints)
+            msg = '{0} {1}. {2}'.format(msg1, endpoints, msg2)
+            warnings.warn(msg, MissingURLGeneratorWarning, stacklevel=3)
 
     def _build_one(self, url):
         """Get the given ``url`` from the app and write the matching file.
@@ -267,12 +269,11 @@ class Freezer(object):
         ignore_404 = self.app.config['FREEZER_IGNORE_404_NOT_FOUND']
         if response.status_code != 200:
             if response.status_code == 404 and ignore_404:
-                warnings.warn('Ignored %r on URL %s' % (response.status, url),
-                              NotFoundWarning,
-                              stacklevel=3)
+                msg = 'Ignored {0} on URL {1}'.format(response.status, url)
+                warnings.warn(msg, NotFoundWarning, stacklevel=3)
             else:
-                raise ValueError('Unexpected status %r on URL %s' \
-                    % (response.status, url))
+                msg = 'Unexpected status {0} on URL {1}'
+                raise ValueError(msg.format(response.status, url))
 
         destination_path = self.urlpath_to_filepath(url)
         filename = os.path.join(self.root, *destination_path.split('/'))
@@ -288,11 +289,10 @@ class Freezer(object):
                 guessed_type = self.app.config['FREEZER_DEFAULT_MIMETYPE']
 
             if not guessed_type == response.mimetype:
-                warnings.warn(
-                    'Filename extension of %r (type %s) does not match Content-'
-                    'Type: %s' % (basename, guessed_type, response.content_type),
-                    MimetypeMismatchWarning,
-                    stacklevel=3)
+                msg = 'Filename extension of {0} '.format(basename)
+                msg = '{0}(type {1}) does not match '.format(msg, guessed_type)
+                msg = '{0}Content-Type: {1}'.format(msg, response.content_type)
+                warnings.warn(msg, MimetypeMismatchWarning, stacklevel=3)
 
         # Create directories as needed
         dirname = os.path.dirname(filename)
@@ -415,7 +415,7 @@ def walk_directory(root, ignore=()):
 
     """
     path_ignore = [n.strip('/') for n in ignore if '/' in n]
-    basename_ignore = [n for n in ignore if '/'  not in n]
+    basename_ignore = [n for n in ignore if '/' not in n]
 
     def walk(directory, path_so_far):
         for name in sorted(os.listdir(directory)):

@@ -56,10 +56,11 @@ def create_app(defer_init_app=False, freezer_kwargs=None):
     for asset in ("favicon.ico",):
         url = "/" + asset
         name = asset.replace(".", "_")
-        app.add_url_rule(url, name, partial(app.send_static_file, filename=asset))
+        _partial = partial(app.send_static_file, filename=asset)
+        app.add_url_rule(url, name, _partial)
 
     @app.route('/product_<int:product_id>/')
-    def product(product_id):
+    def product_route(product_id):
         return 'Product num %i' % product_id
 
     @app.route('/add/', methods=['POST'])
@@ -67,7 +68,7 @@ def create_app(defer_init_app=False, freezer_kwargs=None):
         return 'This view should be ignored as it does not accept GET.'
 
     @freezer.register_generator
-    def product():
+    def product_generator():
         # endpoint, values
         yield 'product', {'product_id': 0}
         yield 'page', {'name': 'foo'}
